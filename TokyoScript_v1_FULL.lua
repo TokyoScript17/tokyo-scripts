@@ -3,10 +3,7 @@
 -- ║   Key System + Script Principale  ·  Navy Ice UI            ║
 -- ╚══════════════════════════════════════════════════════════════╝
 
--- ══════════════════════════════════════
--- SCRIPT PRINCIPALE
--- ══════════════════════════════════════
-local function LaunchMainScript()
+local _ok, _err = pcall(function()
 
 -- ══════════════════════════════════════
 -- SERVICES
@@ -19,6 +16,7 @@ local UserInputService = game:GetService("UserInputService")
 local VirtualUser      = game:GetService("VirtualUser")
 
 local LP = Players.LocalPlayer
+local USERNAME = LP.Name
 local function GetChar()  return LP.Character end
 local function GetRoot()  local c=GetChar(); return c and c:FindFirstChild("HumanoidRootPart") end
 local function GetHum()   local c=GetChar(); return c and c:FindFirstChildOfClass("Humanoid") end
@@ -1280,8 +1278,7 @@ local function OpenMenu()
     end
 end
 
-pcall(PlaySnowIntro)
-task.delay(3.5, function() pcall(OpenMenu) end)
+-- avvio gestito dal key system
 
 if Cfg.AntiAFK then StartAntiAFK() end
 
@@ -1306,8 +1303,13 @@ end)
 
 print("👺 [!Tokyo Script V1.0] Caricato!  |  LeftCtrl = minimizza")
 
-end
+-- ══════════════════════════════════════════════════════════════
+-- KEY SYSTEM
+-- ══════════════════════════════════════════════════════════════
 
+-- ══════════════════════════════════════
+-- CONFIG — MODIFICA QUESTI VALORI
+-- ══════════════════════════════════════
 local VALID_KEYS = {
     "TOKYO-FAGF-Y1YI",
     "TOKYO-BTWY-9FSS",
@@ -1365,13 +1367,7 @@ local DISCORD_INVITE = "https://discord.gg/TUOCODICE"  -- <-- metti il tuo link 
 -- ══════════════════════════════════════
 -- SERVICES
 -- ══════════════════════════════════════
-local Players          = game:GetService("Players")
-local TweenService     = game:GetService("TweenService")
-local RunService       = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 
-local LP       = Players.LocalPlayer
-local USERNAME = LP.Name
 
 -- ══════════════════════════════════════
 -- KEY STORAGE
@@ -1939,7 +1935,11 @@ local function TryLogin()
     if IsKeyValid(key) then
         SaveKey(key)
         PlayWelcome(function()
-            LaunchMainScript()
+            -- ═══════════════════════════════════════════════════
+            -- INSERISCI QUI IL CARICAMENTO DELLO SCRIPT PRINCIPALE
+            -- es: loadstring(game:HttpGet("URL_SCRIPT"))()
+            -- ═══════════════════════════════════════════════════
+            print("👺 [!Tokyo Script v1.0] Accesso OK per " .. USERNAME)
         end)
     else
         loginBtn.Text   = "LOGIN"
@@ -1967,7 +1967,8 @@ task.spawn(function()
         inputBox.Text = saved
         task.wait(0.9)
         PlayWelcome(function()
-            LaunchMainScript()
+            pcall(PlaySnowIntro)
+            task.delay(3.5, function() pcall(OpenMenu) end)
         end)
     end
 end)
