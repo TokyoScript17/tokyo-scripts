@@ -150,25 +150,25 @@ local AbSys = ReplicatedStorage:WaitForChild("AbilitySystem", 5)
 local FrPS  = nil
 pcall(function() FrPS = ReplicatedStorage:WaitForChild("FruitPowerSystem", 5) end)
 
-local function Fire(folder, name, ...)
+local function Fire(folder, name, a1, a2, a3, a4, a5)
     if not folder then return end
     local r = folder:FindFirstChild(name)
     if r and r:IsA("RemoteEvent") then
-        pcall(function() r:FireServer(...) end)
+        pcall(function() r:FireServer(a1, a2, a3, a4, a5) end)
     end
 end
-local function Invoke(folder, name, ...)
+local function Invoke(folder, name, a1, a2, a3, a4, a5)
     if not folder then return end
     local r = folder:FindFirstChild(name)
     if r and r:IsA("RemoteFunction") then
-        local ok, res = pcall(function() return r:InvokeServer(...) end)
+        local ok, res = pcall(function() return r:InvokeServer(a1, a2, a3, a4, a5) end)
         if ok then return res end
     end
 end
-local function RE_Fire(n, ...)  Fire(RE, n, ...) end
-local function Rem_Fire(n, ...) Fire(Rem, n, ...) end
+local function RE_Fire(n, a1, a2, a3, a4, a5)  Fire(RE, n, a1, a2, a3, a4, a5) end
+local function Rem_Fire(n, a1, a2, a3, a4, a5) Fire(Rem, n, a1, a2, a3, a4, a5) end
 local AbRemotes = AbSys and AbSys:FindFirstChild("Remotes")
-local function Ab_Fire(n, ...) Fire(AbRemotes, n, ...) end
+local function Ab_Fire(n, a1, a2, a3, a4, a5) Fire(AbRemotes, n, a1, a2, a3, a4, a5) end
 
 -- =====================
 -- CONFIG
