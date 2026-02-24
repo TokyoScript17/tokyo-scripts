@@ -3,8 +3,6 @@
 -- ║   Key System + Script Principale  ·  Navy Ice UI            ║
 -- ╚══════════════════════════════════════════════════════════════╝
 
-local _ok, _err = pcall(function()
-
 -- ══════════════════════════════════════
 -- SERVICES
 -- ══════════════════════════════════════
@@ -1278,7 +1276,7 @@ local function OpenMenu()
     end
 end
 
--- avvio gestito dal key system
+-- [avvio controllato dal key system]
 
 if Cfg.AntiAFK then StartAntiAFK() end
 
@@ -1303,13 +1301,11 @@ end)
 
 print("👺 [!Tokyo Script V1.0] Caricato!  |  LeftCtrl = minimizza")
 
+
 -- ══════════════════════════════════════════════════════════════
--- KEY SYSTEM
+-- KEY SYSTEM (si avvia subito, poi lancia OpenMenu)
 -- ══════════════════════════════════════════════════════════════
 
--- ══════════════════════════════════════
--- CONFIG — MODIFICA QUESTI VALORI
--- ══════════════════════════════════════
 local VALID_KEYS = {
     "TOKYO-FAGF-Y1YI",
     "TOKYO-BTWY-9FSS",
@@ -1936,10 +1932,8 @@ local function TryLogin()
         SaveKey(key)
         PlayWelcome(function()
             -- ═══════════════════════════════════════════════════
-            -- INSERISCI QUI IL CARICAMENTO DELLO SCRIPT PRINCIPALE
-            -- es: loadstring(game:HttpGet("URL_SCRIPT"))()
-            -- ═══════════════════════════════════════════════════
-            print("👺 [!Tokyo Script v1.0] Accesso OK per " .. USERNAME)
+            pcall(PlaySnowIntro)
+            task.delay(3.5, function() pcall(OpenMenu) end)
         end)
     else
         loginBtn.Text   = "LOGIN"
