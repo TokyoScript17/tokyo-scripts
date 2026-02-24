@@ -226,17 +226,93 @@ end
 -- =====================
 -- UTILITY
 -- =====================
+
+-- Parole chiave NPC quest/shop da NON attaccare
+local NPC_BLACKLIST = {
+    "npc","shop","quest","merchant","vendor","trader","guide","master",
+    "teacher","sensei","keeper","warden","captain","admiral","king","queen",
+    "aizen","gojo","cid","summon","portal","gate","blacksmith","upgrade",
+    "trainer","tutor","citizen","villager","elder","chief","mayor",
+    "guard","soldier","recruit","dealer","broker",
+}
+local function IsNPC(model)
+    local n = model.Name:lower()
+    for _, kw in ipairs(NPC_BLACKLIST) do
+        if n:find(kw) then return true end
+    end
+    local hum = model:FindFirstChildOfClass("Humanoid")
+    if hum and hum.MaxHealth >= 1e9 then return true end
+    for _, v in ipairs(model:GetDescendants()) do
+        if v:IsA("BillboardGui") then
+            if v.Name:lower():find("quest") or v.Name:lower():find("shop") then return true end
+        end
+        if v:IsA("ProximityPrompt") then
+            local t = (v.ActionText..v.ObjectText):lower()
+            if t:find("quest") or t:find("shop") or t:find("talk") then return true end
+        end
+    end
+    return false
+end
+
+-- Mappa dropdown -> keywords nel workspace
+local MOB_KEYWORDS = {
+    ["thief %[lv%.10%]"]          = {"thief"},
+    ["thief boss %[lv%.25%]"]     = {"thief boss","thiefboss"},
+    ["monkey %[lv%.250%]"]        = {"monkey"},
+    ["monkey boss %[lv%.500%]"]   = {"monkey boss","monkeyboss"},
+    ["desert bandit %[lv%.750%]"] = {"desert bandit","bandit","desert"},
+    ["desert boss %[lv%.1000%]"]  = {"desert boss","desertboss"},
+    ["frost rogue %[lv%.1500%]"]  = {"frost rogue","frost"},
+    ["snow boss %[lv%.2000%]"]    = {"snow boss","snowboss"},
+    ["sorcerer student %[lv%.3000%]"] = {"sorcerer student","sorcerer"},
+    ["panda boss %[lv%.4000%]"]   = {"panda"},
+    ["hollow %[lv%.5000%]"]       = {"hollow"},
+    ["strong sorcerer %[lv%.6000%]"] = {"strong sorcerer","strong"},
+    ["curse %[lv%.7000%]"]        = {"curse"},
+    ["slime %[lv%.8000%]"]        = {"slime"},
+    ["academy teacher %[lv%.9000%]"] = {"academy teacher","academy"},
+    ["alucard"] = {"alucard"},
+    ["gojo"]    = {"gojo"},
+    ["rimuru"]  = {"rimuru"},
+    ["gilgamesh"] = {"gilgamesh"},
+    ["valentine"] = {"valentine"},
+    ["anos"]    = {"anos"},
+}
+
+local function GetMobKeywords(selectedMob)
+    local sl = selectedMob:lower()
+    for pattern, kws in pairs(MOB_KEYWORDS) do
+        if sl:find(pattern) then return kws end
+    end
+    -- fallback: toglie [Lv.xxx] e usa il nome pulito
+    local clean = sl:gsub("%s*%[.*%]",""):gsub("^%s+",""):gsub("%s+$","")
+    return {clean}
+end
+
 local function FindNearest(kw, maxD)
-    maxD = maxD or 600
+    maxD = maxD or 9999
     local root = GetRoot(); if not root then return nil end
+    local keywords
+    if type(kw) == "table" then
+        keywords = kw
+    else
+        keywords = GetMobKeywords(kw or "")
+    end
     local best, bd = nil, maxD
     for _, m in ipairs(workspace:GetDescendants()) do
-        if m:IsA("Model") and m.Name:lower():find(kw:lower()) and m ~= GetChar() then
-            local hum = m:FindFirstChildOfClass("Humanoid")
-            local hr  = m:FindFirstChild("HumanoidRootPart")
-            if hum and hr and hum.Health > 0 then
-                local d = (root.Position - hr.Position).Magnitude
-                if d < bd then best = m; bd = d end
+        if m:IsA("Model") and m ~= GetChar() and not IsNPC(m) then
+            local n = m.Name:lower()
+            local match = false
+            for _, k in ipairs(keywords) do
+                if n:find(k:lower()) then match = true; break end
+            end
+            if match then
+                local hum = m:FindFirstChildOfClass("Humanoid")
+                local hr  = m:FindFirstChild("HumanoidRootPart")
+                if hum and hr and hum.Health > 0 then
+                    local d = (root.Position - hr.Position).Magnitude
+                    if d < bd then best = m; bd = d end
+                end
             end
         end
     end
@@ -245,12 +321,12 @@ end
 
 local function FindAnyMob(maxD)
     local root = GetRoot(); if not root then return nil end
-    local best, bd = nil, maxD or 400
+    local best, bd = nil, maxD or 9999
     for _, m in ipairs(workspace:GetDescendants()) do
-        if m:IsA("Model") and m ~= GetChar() then
+        if m:IsA("Model") and m ~= GetChar() and not IsNPC(m) then
             local hum = m:FindFirstChildOfClass("Humanoid")
             local hr  = m:FindFirstChild("HumanoidRootPart")
-            if hum and hr and hum.Health > 0 and hum.MaxHealth > 0 and hum.MaxHealth < 1e9 then
+            if hum and hr and hum.Health > 0 and hum.MaxHealth > 0 then
                 local d = (root.Position - hr.Position).Magnitude
                 if d < bd then best = m; bd = d end
             end
@@ -262,6 +338,17 @@ end
 local function TeleportTo(pos)
     local root = GetRoot()
     if root then root.CFrame = CFrame.new(pos + Vector3.new(0, 4, 0)) end
+end
+
+-- Teleport direttamente vicino al mob target
+local function TeleportToTarget(target)
+    if not target then return end
+    local hr = target:FindFirstChild("HumanoidRootPart"); if not hr then return end
+    local root = GetRoot(); if not root then return end
+    local off = Cfg.FarmPosition == "Behind" and Vector3.new(0, 0, 5)
+             or Cfg.FarmPosition == "Front"  and Vector3.new(0, 0, -5)
+             or Vector3.new(5, 0, 0)
+    root.CFrame = CFrame.lookAt(hr.Position + off, hr.Position)
 end
 
 local function FireAllProx(kw)
@@ -293,10 +380,11 @@ local function AttackTarget(target)
     local root = GetRoot(); local hum = GetHum()
     if not root or not hum or hum.Health <= 0 then return end
     local hr = target:FindFirstChild("HumanoidRootPart"); if not hr then return end
-    local off = Cfg.FarmPosition == "Behind" and Vector3.new(0, 0, 4)
-             or Cfg.FarmPosition == "Front"  and Vector3.new(0, 0, -4)
-             or Vector3.new(4, 0, 0)
-    root.CFrame = CFrame.lookAt(hr.Position + off, hr.Position)
+    local targetHum = target:FindFirstChildOfClass("Humanoid")
+    if not targetHum or targetHum.Health <= 0 then return end
+    -- Teleport direttamente vicino al mob
+    TeleportToTarget(target)
+    task.wait(0.05)
     local CombatRem = ReplicatedStorage:FindFirstChild("CombatSystem")
     if CombatRem then CombatRem = CombatRem:FindFirstChild("Remotes") end
     if CombatRem then Fire(CombatRem, "RequestHit", target) end
@@ -664,42 +752,122 @@ local function MkToggle(parent, label, cfgKey, cb)
     clk.MouseLeave:Connect(function() TweenService:Create(row, TweenInfo.new(0.1), {BackgroundColor3=bg}):Play() end)
 end
 
+-- Dropdown overlay container (sopra tutto, nel SG root)
+local DropOverlay = Instance.new("Frame", SG)
+DropOverlay.Size = UDim2.new(1,0,1,0)
+DropOverlay.BackgroundTransparency = 1
+DropOverlay.ZIndex = 200
+DropOverlay.Name = "DropOverlay"
+
+local activeDropdown = nil
+-- Chiudi dropdown se clicchi fuori
+local _ddConn = DropOverlay.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 then
+        if activeDropdown then activeDropdown.Visible = false; activeDropdown = nil end
+        DropOverlay.Active = false
+    end
+end)
+
 local function MkDropdown(parent, label, opts, cfgKey, cb)
     RowIdx = RowIdx + 1; local bg = NextRow()
     local row = Instance.new("Frame", parent)
     row.Size = UDim2.new(1,0,0,36); row.BackgroundColor3 = bg
-    row.BorderSizePixel = 0; row.LayoutOrder = RowIdx; row.ClipsDescendants = false
+    row.BorderSizePixel = 0; row.LayoutOrder = RowIdx
     Instance.new("UICorner", row).CornerRadius = UDim.new(0,6)
+
     local lb = Instance.new("TextLabel", row)
     lb.Size = UDim2.new(0.44,0,1,0); lb.Position = UDim2.new(0,12,0,0)
     lb.BackgroundTransparency = 1; lb.Text = label; lb.TextColor3 = C.Text
     lb.Font = Enum.Font.Gotham; lb.TextSize = 12; lb.TextXAlignment = Enum.TextXAlignment.Left
+
     local sel = Instance.new("TextButton", row)
     sel.Size = UDim2.new(0.49,0,0,26); sel.Position = UDim2.new(0.5,-2,0.5,-13)
     sel.BackgroundColor3 = C.Panel; sel.Text = tostring(Cfg[cfgKey] or opts[1])
     sel.TextColor3 = C.Accent; sel.Font = Enum.Font.GothamBold; sel.TextSize = 11
     sel.BorderSizePixel = 0; sel.ZIndex = 5
     Instance.new("UICorner", sel).CornerRadius = UDim.new(0,5)
-    local dl = Instance.new("Frame", row)
-    dl.Size = UDim2.new(0.49,0,0,math.min(#opts,6)*27)
-    dl.Position = UDim2.new(0.5,-2,1,4)
-    dl.BackgroundColor3 = C.Panel; dl.BorderSizePixel = 0; dl.Visible = false; dl.ZIndex = 60
-    Instance.new("UICorner", dl).CornerRadius = UDim.new(0,6)
-    Instance.new("UIListLayout", dl).SortOrder = Enum.SortOrder.LayoutOrder
+
+    -- Arrow indicator
+    local arr = Instance.new("TextLabel", sel)
+    arr.Size = UDim2.new(0,18,1,0); arr.Position = UDim2.new(1,-20,0,0)
+    arr.BackgroundTransparency = 1; arr.Text = "v"; arr.TextColor3 = C.Accent
+    arr.Font = Enum.Font.GothamBold; arr.TextSize = 10; arr.ZIndex = 6
+
+    -- Dropdown list nel overlay (non clippato)
+    local dlH = math.min(#opts, 7) * 30
+    local dl = Instance.new("Frame", DropOverlay)
+    dl.Size = UDim2.new(0, 220, 0, dlH)
+    dl.BackgroundColor3 = Color3.fromRGB(12, 16, 32)
+    dl.BorderSizePixel = 0; dl.Visible = false; dl.ZIndex = 201
+    Instance.new("UICorner", dl).CornerRadius = UDim.new(0,8)
+    local dlStroke = Instance.new("UIStroke", dl)
+    dlStroke.Color = C.Border; dlStroke.Thickness = 1.5
+
+    -- Scrolling per tante opzioni
+    local dlScroll = Instance.new("ScrollingFrame", dl)
+    dlScroll.Size = UDim2.new(1,0,1,0)
+    dlScroll.BackgroundTransparency = 1
+    dlScroll.BorderSizePixel = 0
+    dlScroll.ScrollBarThickness = 3
+    dlScroll.ScrollBarImageColor3 = C.Accent
+    dlScroll.CanvasSize = UDim2.new(0,0,0,#opts*30)
+    dlScroll.ZIndex = 202
+    local dlList = Instance.new("UIListLayout", dlScroll)
+    dlList.SortOrder = Enum.SortOrder.LayoutOrder
+
     for i, opt in ipairs(opts) do
-        local ob = Instance.new("TextButton", dl)
-        ob.Size = UDim2.new(1,0,0,27); ob.BackgroundColor3 = C.Panel
-        ob.Text = " "..opt; ob.TextColor3 = C.Text; ob.Font = Enum.Font.Gotham
-        ob.TextSize = 11; ob.BorderSizePixel = 0; ob.ZIndex = 61; ob.LayoutOrder = i
+        local ob = Instance.new("TextButton", dlScroll)
+        ob.Size = UDim2.new(1,0,0,30)
+        ob.BackgroundColor3 = Color3.fromRGB(12,16,32)
+        ob.Text = "  "..opt; ob.TextColor3 = C.Text; ob.Font = Enum.Font.Gotham
+        ob.TextSize = 12; ob.BorderSizePixel = 0; ob.ZIndex = 203; ob.LayoutOrder = i
         ob.TextXAlignment = Enum.TextXAlignment.Left
-        ob.MouseEnter:Connect(function() ob.BackgroundColor3 = C.Hover; ob.TextColor3 = C.White end)
-        ob.MouseLeave:Connect(function() ob.BackgroundColor3 = C.Panel; ob.TextColor3 = C.Text end)
+        -- Linea separatrice sottile
+        if i < #opts then
+            local sep2 = Instance.new("Frame", ob)
+            sep2.Size = UDim2.new(1,-16,0,1); sep2.Position = UDim2.new(0,8,1,-1)
+            sep2.BackgroundColor3 = C.Border; sep2.BorderSizePixel = 0; sep2.ZIndex = 204
+        end
+        ob.MouseEnter:Connect(function()
+            ob.BackgroundColor3 = C.Hover; ob.TextColor3 = C.Accent
+        end)
+        ob.MouseLeave:Connect(function()
+            ob.BackgroundColor3 = Color3.fromRGB(12,16,32); ob.TextColor3 = C.Text
+        end)
         ob.MouseButton1Click:Connect(function()
-            Cfg[cfgKey] = opt; sel.Text = opt; dl.Visible = false
+            Cfg[cfgKey] = opt; sel.Text = opt
+            dl.Visible = false; activeDropdown = nil
+            DropOverlay.Active = false
             if cb then cb(opt) end
         end)
     end
-    sel.MouseButton1Click:Connect(function() dl.Visible = not dl.Visible end)
+
+    sel.MouseButton1Click:Connect(function()
+        -- Chiudi altri dropdown aperti
+        if activeDropdown and activeDropdown ~= dl then
+            activeDropdown.Visible = false
+        end
+        if dl.Visible then
+            dl.Visible = false; activeDropdown = nil
+            DropOverlay.Active = false
+            return
+        end
+        -- Calcola posizione assoluta del bottone sel nello schermo
+        local absPos = sel.AbsolutePosition
+        local absSize = sel.AbsoluteSize
+        local screenH = workspace.CurrentCamera.ViewportSize.Y
+        local spaceBelow = screenH - (absPos.Y + absSize.Y)
+        -- Apri sopra o sotto in base allo spazio
+        if spaceBelow < dlH + 10 then
+            dl.Position = UDim2.new(0, absPos.X, 0, absPos.Y - dlH - 4)
+        else
+            dl.Position = UDim2.new(0, absPos.X, 0, absPos.Y + absSize.Y + 4)
+        end
+        dl.Size = UDim2.new(0, absSize.X, 0, dlH)
+        dl.Visible = true
+        activeDropdown = dl
+        DropOverlay.Active = true
+    end)
 end
 
 local function MkBtn(parent, label, sub, cb)
@@ -772,14 +940,20 @@ MkDropdown(PAF,"Farm Position",{"Behind","Front","Side"},"FarmPosition")
 MkToggle(PAF,"Auto Farm Mob","AutoFarm",function(v)
     if v then
         StartLoop("Farm",function()
-            local kw = Cfg.SelectedMob:gsub("%s*%[.*%]",""):gsub("%s+$","")
-            local m = FindNearest(kw)
-            if m then AttackTarget(m) end
-        end,0.05)
+            local kws = GetMobKeywords(Cfg.SelectedMob)
+            local m = FindNearest(kws)
+            if m then
+                AttackTarget(m)
+            end
+        end,0.15)
     else StopLoop("Farm") end
 end)
 MkToggle(PAF,"Auto Farm ALL Mobs","AutoFarmAll",function(v)
-    if v then StartLoop("FarmAll",function() local m=FindAnyMob(); if m then AttackTarget(m) end end,0.05)
+    if v then
+        StartLoop("FarmAll",function()
+            local m = FindAnyMob()
+            if m then AttackTarget(m) end
+        end,0.15)
     else StopLoop("FarmAll") end
 end)
 MkSect(PAF,"Skills")
@@ -790,7 +964,12 @@ end)
 MkSect(PAF,"Boss Farm")
 MkDropdown(PAF,"Select Boss",{"Alucard","Gojo","Rimuru","Gilgamesh","Valentine","Anos","Slime"},"SelectedBoss")
 MkToggle(PAF,"Auto Farm Boss","AutoFarmBoss",function(v)
-    if v then StartLoop("FarmBoss",function() local m=FindNearest(Cfg.SelectedBoss,2000); if m then AttackTarget(m) end end,0.05)
+    if v then
+        StartLoop("FarmBoss",function()
+            local kws = GetMobKeywords(Cfg.SelectedBoss)
+            local m = FindNearest(kws)
+            if m then AttackTarget(m) end
+        end,0.15)
     else StopLoop("FarmBoss") end
 end)
 
@@ -804,7 +983,11 @@ MkToggle(PAQ,"Auto Complete Quest","AutoCompleteQuest",function(v)
     if v then StartLoop("CompQ",DoCompleteQuest,1) else StopLoop("CompQ") end
 end)
 MkToggle(PAQ,"Auto Farm Quest Mob","AutoQuestFarm",function(v)
-    if v then StartLoop("QFarm",function() local m=FindAnyMob(); if m then AttackTarget(m) end end,0.05)
+    if v then
+        StartLoop("QFarm",function()
+            local m = FindAnyMob()
+            if m then AttackTarget(m) end
+        end,0.15)
     else StopLoop("QFarm") end
 end)
 MkBtn(PAQ,"Accept Quest Now",nil,function() DoAcceptQuest() end)
@@ -818,7 +1001,7 @@ MkToggle(PB,"Auto Spawn Rimuru","AutoSpawnRimuru",function(v)
     if v then StartLoop("SpawnRim",DoSpawnRimuru,4) else StopLoop("SpawnRim") end
 end)
 MkToggle(PB,"Auto Kill Rimuru","AutoKillRimuru",function(v)
-    if v then StartLoop("KillRim",function() local m=FindNearest("Rimuru",2000); if m then AttackTarget(m) end end,0.05)
+    if v then StartLoop("KillRim",function() local m=FindNearest({"rimuru"}); if m then AttackTarget(m) end end,0.15)
     else StopLoop("KillRim") end
 end)
 MkSect(PB,"Anos")
@@ -826,7 +1009,7 @@ MkToggle(PB,"Auto Spawn Anos","AutoSpawnAnos",function(v)
     if v then StartLoop("SpawnAnos",DoSpawnAnos,4) else StopLoop("SpawnAnos") end
 end)
 MkToggle(PB,"Auto Kill Anos","AutoKillAnos",function(v)
-    if v then StartLoop("KillAnos",function() local m=FindNearest("Anos",2000); if m then AttackTarget(m) end end,0.05)
+    if v then StartLoop("KillAnos",function() local m=FindNearest({"anos"}); if m then AttackTarget(m) end end,0.15)
     else StopLoop("KillAnos") end
 end)
 MkSect(PB,"Strongest Boss")
@@ -834,7 +1017,7 @@ MkToggle(PB,"Auto Spawn Strongest","AutoSpawnStrongest",function(v)
     if v then StartLoop("SpawnStr",DoSpawnStrongest,4) else StopLoop("SpawnStr") end
 end)
 MkToggle(PB,"Auto Kill Strongest","AutoKillStrongest",function(v)
-    if v then StartLoop("KillStr",function() local m=FindAnyMob(2000); if m then AttackTarget(m) end end,0.05)
+    if v then StartLoop("KillStr",function() local m=FindAnyMob(); if m then AttackTarget(m) end end,0.15)
     else StopLoop("KillStr") end
 end)
 MkSect(PB,"Crafting")
@@ -868,7 +1051,7 @@ MkToggle(PD,"Auto Retry","AutoRetry",function(v)
     else StopLoop("Retry") end
 end)
 MkToggle(PD,"Kill Dungeon Mobs","StartKill",function(v)
-    if v then StartLoop("DKill",function() local m=FindAnyMob(300); if m then AttackTarget(m) end end,0.05)
+    if v then StartLoop("DKill",function() local m=FindAnyMob(); if m then AttackTarget(m) end end,0.15)
     else StopLoop("DKill") end
 end)
 MkBtn(PD,"Leave Dungeon",nil,function() Rem_Fire("LeaveDungeonPortal") end)
@@ -959,30 +1142,39 @@ kov.BackgroundColor3 = Color3.fromRGB(0,0,0)
 kov.BackgroundTransparency = 0.5
 kov.BorderSizePixel = 0; kov.ZIndex = 1
 
--- Snow
+-- Oni rain (emoji che scende)
 local snowF = Instance.new("Frame", KG)
 snowF.Size = UDim2.new(1,0,1,0)
 snowF.BackgroundTransparency = 1; snowF.ZIndex = 2
 
+local oniColors = {
+    Color3.fromRGB(220, 30, 30),
+    Color3.fromRGB(160, 10, 10),
+    Color3.fromRGB(100, 5, 5),
+    Color3.fromRGB(60, 0, 0),
+    Color3.fromRGB(180, 50, 50),
+    Color3.fromRGB(30, 0, 0),
+}
+
 local flakes = {}
-for i = 1, 35 do
+for i = 1, 30 do
     local l = Instance.new("TextLabel", snowF)
     l.BackgroundTransparency = 1; l.ZIndex = 2
     l.Font = Enum.Font.GothamBold
-    l.TextSize = math.random(8,20)
-    l.Text = ({"*",".","+","o"})[math.random(4)]
-    l.TextColor3 = Color3.fromRGB(math.random(120,200), math.random(160,220), 255)
-    l.TextTransparency = math.random(4,8)/10
-    l.Size = UDim2.new(0,20,0,20)
-    local sx = math.random(0,100)/100
-    l.Position = UDim2.new(sx, 0, math.random(-10,100)/100, 0)
-    table.insert(flakes, {l=l, x=sx, spd=math.random(5,14)/10, rot=math.random(-2,2)})
+    l.TextSize = math.random(16, 32)
+    l.Text = "👺"
+    l.TextColor3 = oniColors[math.random(#oniColors)]
+    l.TextTransparency = math.random(1, 4) / 10
+    l.Size = UDim2.new(0, 36, 0, 36)
+    local sx = math.random(0, 100) / 100
+    l.Position = UDim2.new(sx, 0, math.random(-20, 100) / 100, 0)
+    table.insert(flakes, {l=l, x=sx, spd=math.random(3,10)/10, rot=math.random(-1,1)})
 end
 local snowConn = RunService.Heartbeat:Connect(function(dt)
     for _, f in ipairs(flakes) do
-        local ny = (f.l.Position.Y.Scale or 0) + dt * f.spd * 0.07
-        if ny > 1.06 then ny = -0.04; f.x = math.random(0,100)/100 end
-        local nx = f.x + math.sin(tick() * (f.rot~=0 and math.abs(f.rot) or 0.5) + f.x*9) * 0.004
+        local ny = (f.l.Position.Y.Scale or 0) + dt * f.spd * 0.055
+        if ny > 1.08 then ny = -0.06; f.x = math.random(0,100)/100 end
+        local nx = f.x + math.sin(tick() * (f.rot~=0 and math.abs(f.rot) or 0.4) + f.x*7) * 0.003
         f.l.Position = UDim2.new(nx, 0, ny, 0)
     end
 end)
@@ -1074,32 +1266,51 @@ end)
 
 -- Get Key button
 local kGetKey = Instance.new("TextButton", kcard)
-kGetKey.Size = UDim2.new(0,110,0,32); kGetKey.Position = UDim2.new(1,-122,1,-44)
+kGetKey.Size = UDim2.new(0,100,0,30); kGetKey.Position = UDim2.new(1,-114,1,-42)
 kGetKey.BackgroundColor3 = C.Discord; kGetKey.Text = "Get Key"
 kGetKey.TextColor3 = C.White; kGetKey.Font = Enum.Font.GothamBold
-kGetKey.TextSize = 13; kGetKey.BorderSizePixel = 0; kGetKey.ZIndex = 12
+kGetKey.TextSize = 12; kGetKey.BorderSizePixel = 0; kGetKey.ZIndex = 12
 Instance.new("UICorner", kGetKey).CornerRadius = UDim.new(0,8)
+
+-- GET HELP button
+local kHelp = Instance.new("TextButton", kcard)
+kHelp.Size = UDim2.new(0,100,0,30); kHelp.Position = UDim2.new(0,12,1,-42)
+kHelp.BackgroundColor3 = Color3.fromRGB(180,30,30); kHelp.Text = "GET HELP"
+kHelp.TextColor3 = C.White; kHelp.Font = Enum.Font.GothamBold
+kHelp.TextSize = 12; kHelp.BorderSizePixel = 0; kHelp.ZIndex = 12
+Instance.new("UICorner", kHelp).CornerRadius = UDim.new(0,8)
+kHelp.MouseEnter:Connect(function()
+    TweenService:Create(kHelp, TweenInfo.new(0.12), {BackgroundColor3=Color3.fromRGB(220,50,50)}):Play()
+end)
+kHelp.MouseLeave:Connect(function()
+    TweenService:Create(kHelp, TweenInfo.new(0.12), {BackgroundColor3=Color3.fromRGB(180,30,30)}):Play()
+end)
 
 -- Toast
 local toast = Instance.new("Frame", KG)
-toast.Size = UDim2.new(0,140,0,36)
-toast.Position = UDim2.new(1,-154,1,10)
-toast.BackgroundColor3 = C.Panel; toast.BorderSizePixel = 0
-toast.ZIndex = 50; toast.BackgroundTransparency = 0.1
-Instance.new("UICorner", toast).CornerRadius = UDim.new(0,8)
+toast.Size = UDim2.new(0,210,0,40)
+toast.Position = UDim2.new(1,-224,1,10)
+toast.BackgroundColor3 = Color3.fromRGB(15,5,5); toast.BorderSizePixel = 0
+toast.ZIndex = 50; toast.BackgroundTransparency = 0.05
+Instance.new("UICorner", toast).CornerRadius = UDim.new(0,10)
+local toastStr = Instance.new("UIStroke", toast)
+toastStr.Color = Color3.fromRGB(160,20,20); toastStr.Thickness = 1.5
 local toastLbl = Instance.new("TextLabel", toast)
-toastLbl.Size = UDim2.new(1,0,1,0); toastLbl.BackgroundTransparency = 1
-toastLbl.Text = "Copied Link"; toastLbl.TextColor3 = C.AccentG
+toastLbl.Size = UDim2.new(1,-10,1,0); toastLbl.Position = UDim2.new(0,5,0,0)
+toastLbl.BackgroundTransparency = 1
+toastLbl.Text = "Link copiato!"; toastLbl.TextColor3 = C.AccentG
 toastLbl.Font = Enum.Font.GothamBold; toastLbl.TextSize = 13; toastLbl.ZIndex = 51
 
 local toastBusy = false
-local function ShowToast()
+local function ShowToast(msg, col)
+    toastLbl.Text = msg or "Link copiato!"
+    toastLbl.TextColor3 = col or C.AccentG
     if toastBusy then return end; toastBusy = true
     TweenService:Create(toast, TweenInfo.new(0.28,Enum.EasingStyle.Back,Enum.EasingDirection.Out), {
-        Position = UDim2.new(1,-154,1,-50)
+        Position = UDim2.new(1,-224,1,-54)
     }):Play()
-    task.delay(2.2, function()
-        TweenService:Create(toast, TweenInfo.new(0.22), {Position=UDim2.new(1,-154,1,10)}):Play()
+    task.delay(2.4, function()
+        TweenService:Create(toast, TweenInfo.new(0.22), {Position=UDim2.new(1,-224,1,10)}):Play()
         task.wait(0.25); toastBusy = false
     end)
 end
@@ -1107,7 +1318,13 @@ end
 kGetKey.MouseButton1Click:Connect(function()
     pcall(function() setclipboard(DISCORD_INVITE) end)
     pcall(function() game:GetService("GuiService"):OpenBrowserWindow(DISCORD_INVITE) end)
-    ShowToast()
+    ShowToast("Key link copiato!", C.AccentG)
+end)
+
+kHelp.MouseButton1Click:Connect(function()
+    pcall(function() setclipboard(DISCORD_INVITE) end)
+    pcall(function() game:GetService("GuiService"):OpenBrowserWindow(DISCORD_INVITE) end)
+    ShowToast("Link aiuto copiato!", Color3.fromRGB(255,120,120))
 end)
 
 -- Shake on error
