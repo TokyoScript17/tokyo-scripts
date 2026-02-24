@@ -1,5 +1,21 @@
--- Tokyo Script V1.0 - All in One
+-- Tokyo Script V1.0 - All in One (FIXED)
 -- Key System + Main Script
+
+-- =====================
+-- COMPATIBILITY SHIMS (fix executor)
+-- =====================
+if not fireproximityprompt then
+    fireproximityprompt = function() end
+end
+if not fireclickdetector then
+    fireclickdetector = function() end
+end
+if not setclipboard then
+    setclipboard = function(t) end
+end
+if not writefile then
+    writefile = function() end
+end
 
 -- =====================
 -- CLEANUP PREVENTIVO (fix errore CoreGui)
@@ -10,15 +26,26 @@ local function SafeDestroy(parent, name)
         if old then old:Destroy() end
     end)
 end
-local cg = game:GetService("CoreGui")
+
+local cg_ok, cg = pcall(function() return game:GetService("CoreGui") end)
 local pg = game:GetService("Players").LocalPlayer.PlayerGui
-SafeDestroy(cg, "TokyoGUI")
-SafeDestroy(cg, "TokyoKeyUI")
-SafeDestroy(cg, "TokyoESP")
+
+if cg_ok and cg then
+    SafeDestroy(cg, "TokyoGUI")
+    SafeDestroy(cg, "TokyoKeyUI")
+    SafeDestroy(cg, "TokyoESP")
+end
 SafeDestroy(pg, "TokyoGUI")
 SafeDestroy(pg, "TokyoKeyUI")
 SafeDestroy(pg, "TokyoESP")
 task.wait(0.1)
+
+-- Helper: parent GUI safely (PlayerGui fallback)
+local function SafeParentGui(gui, name)
+    gui.Name = name
+    -- Sempre PlayerGui per compatibilità massima con Xeno
+    gui.Parent = pg
+end
 
 -- =====================
 -- VALID KEYS
@@ -371,8 +398,10 @@ local function DoTeleportNPC(name)
 end
 local function StartAntiAFK()
     StartLoop("AntiAFK", function()
-        VirtualUser:CaptureController()
-        VirtualUser:ClickButton2(Vector2.new())
+        pcall(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
     end, 55)
 end
 
@@ -380,10 +409,9 @@ end
 -- ESP
 -- =====================
 local ESPGui = Instance.new("ScreenGui")
-ESPGui.Name = "TokyoESP"; ESPGui.ResetOnSpawn = false
-if not pcall(function() ESPGui.Parent = game:GetService("CoreGui") end) then
-    ESPGui.Parent = LP.PlayerGui
-end
+ESPGui.ResetOnSpawn = false
+SafeParentGui(ESPGui, "TokyoESP")
+
 local function MakeESP(player)
     if player == LP then return end
     local function build()
@@ -439,18 +467,10 @@ local C = {
 -- =====================
 -- MAIN GUI
 -- =====================
-pcall(function()
-    local old = game:GetService("CoreGui"):FindFirstChild("TokyoGUI")
-    if old then old:Destroy() end
-end)
-pcall(function()
-    local old = LP.PlayerGui:FindFirstChild("TokyoGUI")
-    if old then old:Destroy() end
-end)
-
 local SG = Instance.new("ScreenGui")
-SG.Name = "TokyoGUI"; SG.ResetOnSpawn = false; SG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-if not pcall(function() SG.Parent = game:GetService("CoreGui") end) then SG.Parent = LP.PlayerGui end
+SG.ResetOnSpawn = false
+SG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+SafeParentGui(SG, "TokyoGUI")
 
 -- Main frame
 local MF = Instance.new("Frame", SG)
@@ -926,22 +946,11 @@ end)
 -- =====================
 -- KEY SYSTEM GUI
 -- =====================
-pcall(function()
-    local old = game:GetService("CoreGui"):FindFirstChild("TokyoKeyUI")
-    if old then old:Destroy() end
-end)
-pcall(function()
-    local old = LP.PlayerGui:FindFirstChild("TokyoKeyUI")
-    if old then old:Destroy() end
-end)
-
 local KG = Instance.new("ScreenGui")
-KG.Name = "TokyoKeyUI"; KG.ResetOnSpawn = false
+KG.ResetOnSpawn = false
 KG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 KG.IgnoreGuiInset = true
-if not pcall(function() KG.Parent = game:GetService("CoreGui") end) then
-    KG.Parent = LP.PlayerGui
-end
+SafeParentGui(KG, "TokyoKeyUI")
 
 -- Overlay
 local kov = Instance.new("Frame", KG)
@@ -973,7 +982,7 @@ local snowConn = RunService.Heartbeat:Connect(function(dt)
     for _, f in ipairs(flakes) do
         local ny = (f.l.Position.Y.Scale or 0) + dt * f.spd * 0.07
         if ny > 1.06 then ny = -0.04; f.x = math.random(0,100)/100 end
-        local nx = f.x + math.sin(RunService.Heartbeat:IsConnected() and tick() * (f.rot~=0 and f.rot or 0.5) + f.x*9 or 0) * 0.004
+        local nx = f.x + math.sin(tick() * (f.rot~=0 and math.abs(f.rot) or 0.5) + f.x*9) * 0.004
         f.l.Position = UDim2.new(nx, 0, ny, 0)
     end
 end)
@@ -1124,7 +1133,7 @@ local function PlayWelcome()
         TweenService:Create(f.l, TweenInfo.new(0.3), {TextTransparency=1}):Play()
     end
     task.wait(0.4)
-    kcard:Destroy()
+    pcall(function() kcard:Destroy() end)
 
     local wCard = Instance.new("Frame", KG)
     wCard.Size = UDim2.new(0,0,0,0); wCard.Position = UDim2.new(0.5,0,0.5,0)
@@ -1187,8 +1196,8 @@ local function PlayWelcome()
             BackgroundTransparency=1, Position=UDim2.new(0.5,-190,0.5,-200)
         }):Play()
         task.wait(0.45)
-        snowConn:Disconnect()
-        KG:Destroy()
+        pcall(function() snowConn:Disconnect() end)
+        pcall(function() KG:Destroy() end)
         -- AVVIA MENU PRINCIPALE
         OpenMenu()
     end)
