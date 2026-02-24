@@ -2,6 +2,25 @@
 -- Key System + Main Script
 
 -- =====================
+-- CLEANUP PREVENTIVO (fix errore CoreGui)
+-- =====================
+local function SafeDestroy(parent, name)
+    pcall(function()
+        local old = parent:FindFirstChild(name)
+        if old then old:Destroy() end
+    end)
+end
+local cg = game:GetService("CoreGui")
+local pg = game:GetService("Players").LocalPlayer.PlayerGui
+SafeDestroy(cg, "TokyoGUI")
+SafeDestroy(cg, "TokyoKeyUI")
+SafeDestroy(cg, "TokyoESP")
+SafeDestroy(pg, "TokyoGUI")
+SafeDestroy(pg, "TokyoKeyUI")
+SafeDestroy(pg, "TokyoESP")
+task.wait(0.1)
+
+-- =====================
 -- VALID KEYS
 -- =====================
 local VALID_KEYS = {
