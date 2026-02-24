@@ -1352,7 +1352,7 @@ local VALID_KEYS = {
     "TOKYO-6MK8-PBZK",
     "TOKYO-E7CQ-FZO0",
 }
-local DISCORD_INVITE = "https://discord.gg/TUOCODICE"  -- <-- metti il tuo link Discord
+local DISCORD_INVITE = "https://discord.gg/unR3KPMU"  -- <-- metti il tuo link Discord
 
 -- --------------------------------------------------
 -- SERVICES
