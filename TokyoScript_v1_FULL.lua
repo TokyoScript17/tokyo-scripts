@@ -1,11 +1,8 @@
--- ╔══════════════════════════════════════════════════════════════╗
--- ║   👺 !Tokyo Script V1.0  — All-in-One Edition              ║
--- ║   Key System + Script Principale  ·  Navy Ice UI            ║
--- ╚══════════════════════════════════════════════════════════════╝
+-- Tokyo Script V1.0 - All-in-One
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- SERVICES
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local Players          = game:GetService("Players")
 local ReplicatedStorage= game:GetService("ReplicatedStorage")
 local RunService       = game:GetService("RunService")
@@ -19,9 +16,9 @@ local function GetChar()  return LP.Character end
 local function GetRoot()  local c=GetChar(); return c and c:FindFirstChild("HumanoidRootPart") end
 local function GetHum()   local c=GetChar(); return c and c:FindFirstChildOfClass("Humanoid") end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- REMOTE FOLDERS (reali da logs)
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local RE   = ReplicatedStorage:WaitForChild("RemoteEvents",   5)  -- RemoteEvents folder
 local Rem  = ReplicatedStorage:WaitForChild("Remotes",        5)  -- Remotes folder
 local AbSys= ReplicatedStorage:WaitForChild("AbilitySystem",  5)  -- AbilitySystem folder
@@ -34,9 +31,9 @@ local function Sub(parent, name)
     return parent:FindFirstChild(name)
 end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- REMOTE HELPERS
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local function Fire(folder, name, ...)
     if not folder then return end
     local r = folder:FindFirstChild(name)
@@ -62,9 +59,9 @@ local function Rem_Fire(n,...) Fire(Rem, n,...) end
 local AbRemotes = AbSys and AbSys:FindFirstChild("Remotes")
 local function Ab_Fire(n,...) Fire(AbRemotes,n,...) end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- CONFIG
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local Cfg = {
     -- Player
     Speedhack=false, SpeedValue=80,
@@ -113,9 +110,9 @@ local Cfg = {
     Transparency=true,
 }
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- LOOP MANAGER
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local Loops = {}
 local function StopLoop(n) Loops[n]=false end
 local function StartLoop(n,fn,t)
@@ -127,9 +124,9 @@ local function StartLoop(n,fn,t)
     end)
 end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- UTILITY
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local function FindNearest(kw, maxD)
     maxD = maxD or 600
     local root=GetRoot(); if not root then return nil end
@@ -189,9 +186,9 @@ local function ClickGUI(kw)
     end
 end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- ATTACK
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local function AttackTarget(target)
     if not target then return end
     local root=GetRoot(); local hum=GetHum()
@@ -251,9 +248,9 @@ local function AttackTarget(target)
     end
 end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- FEATURE FUNCTIONS (Remote REALI)
--- ══════════════════════════════════════
+-- --------------------------------------------------
 
 -- SPEEDHACK
 local function ApplySpeed(on)
@@ -434,9 +431,9 @@ local function StartAntiAFK()
     end,55)
 end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- ESP
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local ESPGui=Instance.new("ScreenGui")
 ESPGui.Name="TokyoScript_ESP"; ESPGui.ResetOnSpawn=false
 if not pcall(function() ESPGui.Parent=game:GetService("CoreGui") end) then
@@ -474,9 +471,9 @@ local function UpdateESP()
     if Cfg.ESPPlayer then for _,p in ipairs(Players:GetPlayers()) do MakeESP(p) end end
 end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- GUI SETUP
--- ══════════════════════════════════════
+-- --------------------------------------------------
 pcall(function() game:GetService("CoreGui"):FindFirstChild("TokyoScript_GUI") and game:GetService("CoreGui").TokyoScript_GUI:Destroy() end)
 pcall(function() LP.PlayerGui:FindFirstChild("TokyoScript_GUI") and LP.PlayerGui.TokyoScript_GUI:Destroy() end)
 
@@ -484,9 +481,9 @@ local SG=Instance.new("ScreenGui")
 SG.Name="TokyoScript_GUI"; SG.ResetOnSpawn=false; SG.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
 if not pcall(function() SG.Parent=game:GetService("CoreGui") end) then SG.Parent=LP.PlayerGui end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- PALETTE COLORI — tema Navy Ice
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local C={
     Bg      = Color3.fromRGB(6, 9, 20),
     Side    = Color3.fromRGB(4, 7, 16),
@@ -507,9 +504,9 @@ local C={
     Red     = Color3.fromRGB(255,  70, 70),
 }
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- SNOW INTRO
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local function PlaySnowIntro()
     local intro=Instance.new("Frame",SG)
     intro.Size=UDim2.new(1,0,1,0); intro.BackgroundTransparency=1; intro.ZIndex=200
@@ -570,9 +567,9 @@ local function PlaySnowIntro()
     end)
 end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- MAIN FRAME
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local MF=Instance.new("Frame",SG)
 MF.Name="MainFrame"
 MF.Size=UDim2.new(0,660,0,460)
@@ -665,9 +662,9 @@ local CAP=Instance.new("UIPadding",CA)
 CAP.PaddingTop=UDim.new(0,10); CAP.PaddingLeft=UDim.new(0,12)
 CAP.PaddingRight=UDim.new(0,16); CAP.PaddingBottom=UDim.new(0,12)
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- PAGE SYSTEM
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local Pages,CurPage,RowIdx={},nil,0
 local function NewPage(name)
     local f=Instance.new("Frame",CA)
@@ -684,9 +681,9 @@ local function ShowPage(name)
     CA.CanvasPosition=Vector2.new(0,0)
 end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- SIDEBAR BUTTONS
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local SBBtns={}
 local function SideBtn(label,icon,page,order)
     local btn=Instance.new("TextButton",SB)
@@ -727,9 +724,9 @@ local function SideBtn(label,icon,page,order)
     table.insert(SBBtns,{btn=btn,bar=bar,ico=ico,txt=txt,page=page})
 end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- WIDGET HELPERS
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local function NextRow() RowIdx=RowIdx+1; return RowIdx%2==0 and C.Row1 or C.Row2 end
 
 local function MkTitle(parent,text)
@@ -897,9 +894,9 @@ local function MkBtn(parent,label,sub,cb)
     row.MouseLeave:Connect(function() TweenService:Create(row,TweenInfo.new(0.1),{BackgroundColor3=bg}):Play() end)
 end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- ██ PAGINE ██
--- ══════════════════════════════════════
+-- --------------------------------------------------
 
 -- ┌─────────────── MAIN ───────────────┐
 local PM=NewPage("Main"); MkTitle(PM,"Main")
@@ -1245,9 +1242,9 @@ MkSect(PSet,"Controls")
 MkBtn(PSet,"Minimize: LeftCtrl",nil,function() MF.Visible=not MF.Visible end)
 MkBtn(PSet,"Destroy GUI",nil,function() SG:Destroy() end)
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- SIDEBAR BUTTONS
--- ══════════════════════════════════════
+-- --------------------------------------------------
 SideBtn("Main",      "⌂", "Main",     1)
 SideBtn("Auto Farm", "⚔", "AutoFarm", 2)
 SideBtn("Quest",     "📋","Quest",    3)
@@ -1257,9 +1254,9 @@ SideBtn("Stats",     "📊","Stats",    6)
 SideBtn("Teleport",  "🌀","Teleport", 7)
 SideBtn("Settings",  "⚙", "Settings", 8)
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- INIT
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local function OpenMenu()
     MF.Visible=true
     MF.Size=UDim2.new(0,0,0,0); MF.Position=UDim2.new(0.5,0,0.5,0)
@@ -1276,7 +1273,7 @@ local function OpenMenu()
     end
 end
 
--- [avvio controllato dal key system]
+-- avvio dal key system
 
 if Cfg.AntiAFK then StartAntiAFK() end
 
@@ -1301,10 +1298,7 @@ end)
 
 print("👺 [!Tokyo Script V1.0] Caricato!  |  LeftCtrl = minimizza")
 
-
--- ══════════════════════════════════════════════════════════════
--- KEY SYSTEM (si avvia subito, poi lancia OpenMenu)
--- ══════════════════════════════════════════════════════════════
+-- KEY SYSTEM
 
 local VALID_KEYS = {
     "TOKYO-FAGF-Y1YI",
@@ -1360,14 +1354,12 @@ local VALID_KEYS = {
 }
 local DISCORD_INVITE = "https://discord.gg/TUOCODICE"  -- <-- metti il tuo link Discord
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- SERVICES
--- ══════════════════════════════════════
-
-
--- ══════════════════════════════════════
+-- --------------------------------------------------
+-- --------------------------------------------------
 -- KEY STORAGE
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local STORAGE_KEY = "SP_Key_v3"
 
 local function SaveKey(k)
@@ -1386,9 +1378,9 @@ local function IsKeyValid(k)
     return false
 end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- PALETTE Navy Ice
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local KC = {
     Bg      = Color3.fromRGB(6,  9,  20),
     Panel   = Color3.fromRGB(10, 14, 28),
@@ -1407,9 +1399,9 @@ local KC = {
     Discord = Color3.fromRGB(88, 101,242),
 }
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- GUI ROOT
--- ══════════════════════════════════════
+-- --------------------------------------------------
 pcall(function()
     local old = game:GetService("CoreGui"):FindFirstChild("SP_KeyUI2")
     if old then old:Destroy() end
@@ -1428,9 +1420,9 @@ if not pcall(function() SG.Parent = game:GetService("CoreGui") end) then
     SG.Parent = LP.PlayerGui
 end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- OVERLAY + NEVE
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local overlay = Instance.new("Frame", SG)
 overlay.Size = UDim2.new(1,0,1,0)
 overlay.BackgroundColor3 = Color3.fromRGB(0,0,0)
@@ -1475,9 +1467,9 @@ local snowConn = RunService.Heartbeat:Connect(function(dt)
     end
 end)
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- CARD
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local card = Instance.new("Frame", SG)
 card.Size                  = UDim2.new(0, 420, 0, 360)
 card.Position              = UDim2.new(0.5, -210, 0.5, -180)
@@ -1512,9 +1504,9 @@ TweenService:Create(card, TweenInfo.new(0.5,Enum.EasingStyle.Back,Enum.EasingDir
     Position = UDim2.new(0.5,-210,0.5,-180),
 }):Play()
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- CONTENUTO CARD
--- ══════════════════════════════════════
+-- --------------------------------------------------
 
 -- Icona rotante
 local iconLbl = Instance.new("TextLabel", card)
@@ -1614,9 +1606,9 @@ local function SetStatus(msg, col)
     statusLbl.TextColor3 = col or KC.Dim
 end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- BOTTONE LOGIN
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local loginBtn = Instance.new("TextButton", card)
 loginBtn.Size             = UDim2.new(0,220,0,42)
 loginBtn.Position         = UDim2.new(0.5,-110,0,216)
@@ -1642,9 +1634,9 @@ loginBtn.MouseLeave:Connect(function()
     TweenService:Create(loginBtn,TweenInfo.new(0.12),{BackgroundColor3=KC.Accent}):Play()
 end)
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- BOTTONE GET KEY (in basso a destra)
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local getKeyBtn = Instance.new("TextButton", card)
 getKeyBtn.Size             = UDim2.new(0,110,0,32)
 getKeyBtn.Position         = UDim2.new(1,-122,1,-44)
@@ -1716,9 +1708,9 @@ getKeyBtn.MouseButton1Click:Connect(function()
     ShowToast()
 end)
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- SHAKE su errore
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local function ShakeCard()
     local orig = card.Position
     for i = 1,5 do
@@ -1731,9 +1723,9 @@ local function ShakeCard()
     TweenService:Create(card,TweenInfo.new(0.1),{Position=orig}):Play()
 end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- WELCOME SCREEN
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local function PlayWelcome(onDone)
     -- Fade out card
     TweenService:Create(card, TweenInfo.new(0.35,Enum.EasingStyle.Quad),{
@@ -1911,9 +1903,9 @@ local function PlayWelcome(onDone)
     end)
 end
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- LOGICA LOGIN
--- ══════════════════════════════════════
+-- --------------------------------------------------
 local function TryLogin()
     local key = inputBox.Text:upper():gsub("%s","")
     if key == "" then
@@ -1931,7 +1923,6 @@ local function TryLogin()
     if IsKeyValid(key) then
         SaveKey(key)
         PlayWelcome(function()
-            -- ═══════════════════════════════════════════════════
             pcall(PlaySnowIntro)
             task.delay(3.5, function() pcall(OpenMenu) end)
         end)
@@ -1950,9 +1941,9 @@ end
 inputBox.FocusLost:Connect(function(enter) if enter then TryLogin() end end)
 loginBtn.MouseButton1Click:Connect(TryLogin)
 
--- ══════════════════════════════════════
+-- --------------------------------------------------
 -- AUTO LOGIN (key già salvata)
--- ══════════════════════════════════════
+-- --------------------------------------------------
 task.spawn(function()
     task.wait(0.4)
     local saved = LoadKey()
